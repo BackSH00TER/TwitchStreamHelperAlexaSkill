@@ -58,7 +58,7 @@ var handlers = {
         );
     },
     'getFollowerCount': function() {
-        getStreamInfo( (response) => {
+        getStreamInfo("followers", (response) => {
             var responseData = JSON.parse(response);
             var cardContent = "Follower count: \n";
                         
@@ -77,7 +77,7 @@ var handlers = {
         });
     },
     'getViewerCount': function () {
-        getViewerCount( (response) => {
+        getStreamInfo("viewers", (response) => {
            var responseData = JSON.parse(response);
            var cardContent = "Viewer count: \n";
            
@@ -162,12 +162,27 @@ function getStreamLiveStatus(callback) {
     req.end();
 };
 
-function getStreamInfo(callback) {
-    // https://api.twitch.tv/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl
+function getStreamInfo(info, callback) {
+    var path = "";
+    switch(info) {
+        case "followers":
+            path = '/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            break;
+        case "viewers":
+            path = '/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            break;
+        case "subscribers":
+            path = '/kraken/channels/backsh00ter/subscriptions?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            break;
+        default:
+            path = '/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            break;
+    }
+
     var options = {
         host: 'api.twitch.tv',
         port: 443,
-        path: '/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl',
+        path: path,
         method: 'GET',
     };
 
@@ -187,29 +202,3 @@ function getStreamInfo(callback) {
     req.end();
 };
 
-//Gets the info of stream
-//Stream must be live to get the stream info
-function getViewerCount(callback) {
-    // https://api.twitch.tv/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl
-    var options = {
-        host: 'api.twitch.tv',
-        port: 443,
-        path: '/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl',
-        method: 'GET',
-    };
-
-    var req = https.request(options, res => {       
-        res.setEncoding('utf8');
-        var returnData = "";
-
-        res.on('data', chunk => {
-            returnData += chunk;
-        });
-
-        res.on('end', () => {             
-            callback(returnData);
-        });
-
-    });
-    req.end();
-};
