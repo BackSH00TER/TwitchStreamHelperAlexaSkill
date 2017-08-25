@@ -74,6 +74,30 @@ var handlers = {
             this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
         });
     },
+    'getViewerCount': function () {
+        getViewerCount( (response) => {
+           var responseData = JSON.parse(response);
+           var cardContent = "Viewer count: \n";
+           
+           if(responseData == null) {
+               outputMsg = "There was a problem getting the data please try again.";
+               cardContent = "Error";
+           }
+           else if(responseData.stream == null) {
+               outputMsg = "There are 0 viewers because the stream is not live.";
+               cardContent += "0";
+           }
+           else {
+               var viewerCount = responseData.stream.viewers;
+               outputMsg = "You currently have " + viewerCount + " viewers.";
+               cardContent += viewerCount;
+           }
+           
+           var cardTitle = "Viewers";
+           
+           this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+        });
+    },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
         var reprompt = HELP_REPROMPT;
@@ -93,6 +117,8 @@ var handlers = {
 
 var https = require('https');
 
+//TODO: update the get functions to be just one function with a parameter for viewr,follower,sub, and then jsut change the
+// path dependingon the variable used, then only need on mehtod to make the same calls
 function getStreamLiveStatus(callback) {
     // Update these options with the details of the web service you would like to call
     var options = {
@@ -145,7 +171,33 @@ function getStreamInfo(callback) {
         });
 
         res.on('end', () => { 
-            console.log(returnData);
+            callback(returnData);
+        });
+
+    });
+    req.end();
+};
+
+//Gets the info of stream
+//Stream must be live to get the stream info
+function getViewerCount(callback) {
+    // https://api.twitch.tv/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl
+    var options = {
+        host: 'api.twitch.tv',
+        port: 443,
+        path: '/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl',
+        method: 'GET',
+    };
+
+    var req = https.request(options, res => {       
+        res.setEncoding('utf8');
+        var returnData = "";
+
+        res.on('data', chunk => {
+            returnData += chunk;
+        });
+
+        res.on('end', () => {             
             callback(returnData);
         });
 
