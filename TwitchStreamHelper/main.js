@@ -6,6 +6,7 @@ var SKILL_NAME = "Twitch Stream Helper";
 var WELCOME_MESSAGE = "Welcome to the Stream Helper Skill.";
 var HELP_MESSAGE = "You can say is the stream live, or, you can say exit... What can I help you with?";
 var HELP_REPROMPT = "What can I help you with?";
+var DIDNT_UNDERSTAND_MESSAGE = "I'm sorry, I didn't understand that. Try again.";
 var STOP_MESSAGE = "Goodbye!";
 var LIVE_MESSAGE = "The stream you asked about is currently live and streaming.";
 var DOWN_MESSAGE = "The stream is not live.";
@@ -25,15 +26,16 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
     //Probably dont need this
-    // 'NewSession': function () {
-    //   var accessToken = this.event.session.user.accessToken;
-    //   if(accessToken) {
-    //       console.log("HAVE ACCESS TOKEN: " + accessToken);
-    //   }
-    //   else {
-    //       this.emit(':tell', "You don't have an accessToken, you need to link your account with Twitch.");
-    //   }
-    // },
+     'NewSession': function () {
+       var accessToken = this.event.session.user.accessToken;
+       if(accessToken) {
+           console.log("HAVE ACCESS TOKEN: " + accessToken);
+           this.emit(':tell', "You already have an access Token");
+       }
+       else {
+           this.emit(':tell', "You don't have an accessToken, you need to link your account with Twitch.");
+       }
+     },
     'LaunchRequest': function () {
         if(this.event.session.user.accessToken === undefined) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
@@ -109,6 +111,12 @@ var handlers = {
     'AMAZON.StopIntent': function () {
         this.emit(':tell', STOP_MESSAGE);
     },
+    'Unhandled': function() {
+        this.emit(':ask', DIDNT_UNDERSTAND_MESSAGE, HELP_REPROMPT);
+    },
+    'CatchAll': function() {
+        this.emit(':ask', DIDNT_UNDERSTAND_MESSAGE, HELP_REPROMPT);
+    }
 };
 
 //=========================================================================================================================================
@@ -118,6 +126,7 @@ var handlers = {
 var https = require('https');
 
 //TODO: update the get functions to be just one function with a parameter for viewr,follower,sub, and then jsut change the
+//TODO: abstract out the URLS so they are using client name logged in w/ and not hardcoded
 // path dependingon the variable used, then only need on mehtod to make the same calls
 function getStreamLiveStatus(callback) {
     // Update these options with the details of the web service you would like to call
