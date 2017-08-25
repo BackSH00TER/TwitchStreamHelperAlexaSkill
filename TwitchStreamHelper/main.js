@@ -100,6 +100,26 @@ var handlers = {
            this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
         });
     },
+    'getSubscriberCount': function () {
+        getStreamInfo("subscribers", (response) => {
+           var responseData = JSON.parse(response);
+           var cardContent = "Subscriber count: \n";
+           
+           if(responseData == null) {
+               outputMsg = "There was a problem getting the data please try again.";
+               cardContent = "Error";
+           }           
+           else {
+               var subscriberCount = responseData._total - 1;
+               outputMsg = "You currently have " + subscriberCount + " subscribers.";
+               cardContent += subscriberCount;
+           }
+           
+           var cardTitle = "Subscribers";
+           
+           this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+        });
+    },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
         var reprompt = HELP_REPROMPT;
@@ -127,9 +147,10 @@ var https = require('https');
 
 //TODO: update the get functions to be just one function with a parameter for viewr,follower,sub, and then jsut change the
 //TODO: abstract out the URLS so they are using client name logged in w/ and not hardcoded
+//TOOD: add a check to ensure user is logged in to twitch and has an accessToken
 // path dependingon the variable used, then only need on mehtod to make the same calls
 function getStreamLiveStatus(callback) {
-    // Update these options with the details of the web service you would like to call
+   
     var options = {
         host: 'api.twitch.tv',
         port: 443,
