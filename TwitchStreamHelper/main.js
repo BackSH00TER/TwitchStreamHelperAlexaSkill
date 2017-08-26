@@ -11,7 +11,11 @@ var STOP_MESSAGE = "Goodbye!";
 var LIVE_MESSAGE = "The stream you asked about is currently live and streaming.";
 var DOWN_MESSAGE = "The stream is not live.";
 
+var accountLinked = false;
 var outputMsg = "";
+var accessToken = "";
+var userName = "";
+
 
 
 //=========================================================================================================================================
@@ -25,42 +29,32 @@ exports.handler = function(event, context, callback) {
 };
 
 var handlers = {
-    //Probably dont need this
-     'NewSession': function () {
-       var accessToken = this.event.session.user.accessToken;
-       if(accessToken) {
-           console.log("HAVE ACCESS TOKEN: " + accessToken);
-           this.emit(':tell', "You already have an access Token");
-       }
-       else {
-           this.emit(':tell', "You don't have an accessToken, you need to link your account with Twitch.");
-       }
-     },
-    'LaunchRequest': function () {
-        if(this.event.session.user.accessToken === undefined) {
-            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
-            return;
-        }
-        else {
-            this.emit('tell:', "Welcome user your accesstoken is already set");
-        }
-        //this.emit('isStreamLive');
-    },
+    
     'isStreamLive': function() {
-            getStreamLiveStatus( (myResult) => {               
-                if(myResult) {
-                    this.emit(':tell', LIVE_MESSAGE);
-                }
-                else {
-                    this.emit(':tell', DOWN_MESSAGE);
-                }
+        if(!accountLinked) {
+            setUserInfo(this.event.session.user.accessToken);
+        }        
+        
+        
+        getStreamLiveStatus( (myResult) => {               
+            if(myResult) {
+                outputMsg = LIVE_MESSAGE;
             }
-        );
+            else {
+                outputMsg = DOWN_MESSAGE;
+            }
+            outputMsg += "Your username is: " + userName + ".";
+            this.emit(':tell', outputMsg);            
+        });
     },
     'getFollowerCount': function() {
+        if(!accountLinked) {           
+            setUserInfo(this.event.session.user.accessToken);
+        }
+        
         getStreamInfo("followers", (response) => {
             var responseData = JSON.parse(response);
-            var cardContent = "Follower count: \n";
+            var cardContent = "Follower count: ";
                         
             if(responseData == null) {
                 outputMsg = "There was a problem with getting the data please try again.";
@@ -70,6 +64,7 @@ var handlers = {
                 outputMsg = "You have " + followers + " followers.";
                 cardContent += followers;
             }
+            outputMsg += " Your username is " + userName + ". Access token is " + accessToken;
             
             var cardTitle = "Followers";
             
@@ -77,9 +72,13 @@ var handlers = {
         });
     },
     'getViewerCount': function () {
+        if(!accountLinked) {
+            setUserInfo(this.event.session.user.accessToken);
+        }
+        
         getStreamInfo("viewers", (response) => {
            var responseData = JSON.parse(response);
-           var cardContent = "Viewer count: \n";
+           var cardContent = "Viewer count: ";
            
            if(responseData == null) {
                outputMsg = "There was a problem getting the data please try again.";
@@ -101,9 +100,13 @@ var handlers = {
         });
     },
     'getSubscriberCount': function () {
+        if(!accountLinked) {
+            setUserInfo(this.event.session.user.accessToken);
+        }
+        
         getStreamInfo("subscribers", (response) => {
            var responseData = JSON.parse(response);
-           var cardContent = "Subscriber count: \n";
+           var cardContent = "Subscriber count: ";
            
            if(responseData == null) {
                outputMsg = "There was a problem getting the data please try again.";
@@ -145,16 +148,13 @@ var handlers = {
 
 var https = require('https');
 
-//TODO: update the get functions to be just one function with a parameter for viewr,follower,sub, and then jsut change the
-//TODO: abstract out the URLS so they are using client name logged in w/ and not hardcoded
-//TOOD: add a check to ensure user is logged in to twitch and has an accessToken
-// path dependingon the variable used, then only need on mehtod to make the same calls
+//Gets the status of whether your stream is live or not
 function getStreamLiveStatus(callback) {
    
     var options = {
         host: 'api.twitch.tv',
         port: 443,
-        path: '/kraken/streams/backsh00ter?client_id=3nevz99m02nwt62pto6ez57f3lms4o',
+        path: '/kraken/streams/' + userName + '?client_id=3nevz99m02nwt62pto6ez57f3lms4o',
         method: 'GET',
     };
 
@@ -183,20 +183,25 @@ function getStreamLiveStatus(callback) {
     req.end();
 };
 
+//Gets the info of your stream depending on the arg you give it
+//Can get counts for followers, viewers, subscribers, also gets  you username
 function getStreamInfo(info, callback) {
     var path = "";
     switch(info) {
         case "followers":
-            path = '/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            path = '/kraken/channels/' + userName + '?oauth_token=' + accessToken;
             break;
         case "viewers":
-            path = '/kraken/streams/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            path = '/kraken/streams/' + userName + '?oauth_token=' + accessToken;
             break;
         case "subscribers":
-            path = '/kraken/channels/backsh00ter/subscriptions?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            path = '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken;
+            break;
+        case "username":
+            path = '/kraken?oauth_token=' + accessToken;
             break;
         default:
-            path = '/kraken/channels/backsh00ter?oauth_token=kf0s375j6kxppkoj2c0ss7pq6aqbpl';
+            path = '/kraken/channels/' + userName + '?oauth_token=' + accessToken;
             break;
     }
 
@@ -222,4 +227,28 @@ function getStreamInfo(info, callback) {
     });
     req.end();
 };
+
+//Updates variables with your accessToken and username
+function setUserInfo(token) {
+    if(!token) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+    }
+    else {
+        accountLinked = true;
+        accessToken = token;       
+        
+        //get the username        
+        getStreamInfo("username", (response) => {
+            var responseData = JSON.parse(response);
+                                    
+            if(responseData) {
+                userName = responseData.token.user_name;                
+            } 
+            else {
+                console.log("THERE WAS ERROR");
+            }
+        });        
+    }
+}
 
