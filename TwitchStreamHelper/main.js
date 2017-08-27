@@ -1,3 +1,9 @@
+//TODO: Figure out way to actually wait for request to finish before moving on to get proper information
+//TODO: Figure out why returning information from other person logged in instead of my own
+//      - Probably use session variables and store in dynamoDB, only need to store accessToken and userName
+//      https://github.com/alexa/alexa-cookbook/blob/master/labs/HelloWorld/README.md
+//
+//OR: Try just resetting values or getting rid of is accountLInked and call it everytime
 'use strict';
 var Alexa = require('alexa-sdk');
 
@@ -24,6 +30,9 @@ var userName = "";
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
     alexa.appId = APP_ID;
+    
+    //alexa.dynamoDBTableName = "SkillSessionVariables";
+    
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
@@ -31,10 +40,10 @@ exports.handler = function(event, context, callback) {
 var handlers = {
     
     'isStreamLive': function() {
-        if(!accountLinked) {
-            setUserInfo(this.event.session.user.accessToken);
-        }        
-        
+//        if(!accountLinked) {
+//            setUserInfo(this.event.session.user.accessToken);
+//        }        
+//        
         
         getStreamLiveStatus( (myResult) => {               
             if(myResult) {
@@ -48,11 +57,25 @@ var handlers = {
         });
     },
     'getFollowerCount': function() {
-        if(!accountLinked) {           
-            setUserInfo(this.event.session.user.accessToken);
+        if(!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
         }
+//        if(!accountLinked) {   
+//            console.log("TOKEN IS: " + this.event.session.user.accessToken);
+//            setUserInfo(this.event.session.user.accessToken,(info) => {
+//                
+//                console.log("INFO: " + info);
+//            });
+//        }
+//        else {
+//            userName = this.attributes['userName'];
+//            accessToken = this.attributes['accessToken'];
+//        }
+        accessToken = this.event.session.user.accessToken;
         
-        getStreamInfo("followers", (response) => {
+        setUserInfo((info) => {                       
+            getStreamInfo("followers", (response) => {
             var responseData = JSON.parse(response);
             var cardContent = "Follower count: ";
                         
@@ -68,13 +91,17 @@ var handlers = {
             
             var cardTitle = "Followers";
             
+            //this.attributes['userName'] = userName;
+            //this.attributes['accessToken'] = accessToken;
+            
             this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
-        });
+            });            
+        });        
     },
     'getViewerCount': function () {
-        if(!accountLinked) {
-            setUserInfo(this.event.session.user.accessToken);
-        }
+//        if(!accountLinked) {
+//            setUserInfo(this.event.session.user.accessToken);
+//        }
         
         getStreamInfo("viewers", (response) => {
            var responseData = JSON.parse(response);
@@ -100,9 +127,9 @@ var handlers = {
         });
     },
     'getSubscriberCount': function () {
-        if(!accountLinked) {
-            setUserInfo(this.event.session.user.accessToken);
-        }
+//        if(!accountLinked) {
+//            setUserInfo(this.event.session.user.accessToken);
+//        }
         
         getStreamInfo("subscribers", (response) => {
            var responseData = JSON.parse(response);
@@ -229,26 +256,18 @@ function getStreamInfo(info, callback) {
 };
 
 //Updates variables with your accessToken and username
-function setUserInfo(token) {
-    if(!token) { //this might not work
-            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
-            return;
-    }
-    else {
-        accountLinked = true;
-        accessToken = token;       
-        
+function setUserInfo(callback) {                            
         //get the username        
-        getStreamInfo("username", (response) => {
+        getStreamInfo("username", (response) => {            
             var responseData = JSON.parse(response);
                                     
             if(responseData) {
-                userName = responseData.token.user_name;                
+                userName = responseData.token.user_name;
             } 
             else {
                 console.log("THERE WAS ERROR");
             }
+            callback(userName);
         });        
-    }
 }
 
