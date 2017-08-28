@@ -14,7 +14,7 @@ var HELP_MESSAGE = "You can say is the stream live, or, you can say exit... What
 var HELP_REPROMPT = "What can I help you with?";
 var DIDNT_UNDERSTAND_MESSAGE = "I'm sorry, I didn't understand that. Try again.";
 var STOP_MESSAGE = "Goodbye!";
-var LIVE_MESSAGE = "The stream you asked about is currently live and streaming.";
+var LIVE_MESSAGE = "Yes, the stream is <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
 var DOWN_MESSAGE = "The stream is not live.";
 
 var accountLinked = false;
@@ -27,127 +27,127 @@ var userName = "";
 //=========================================================================================================================================
 // Handlers  
 //=========================================================================================================================================
-exports.handler = function(event, context, callback) {
+exports.handler = function (event, context, callback) {
     var alexa = Alexa.handler(event, context);
     alexa.appId = APP_ID;
-    
-    //alexa.dynamoDBTableName = "SkillSessionVariables";
-    
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
 var handlers = {
-    
-    'isStreamLive': function() {
-//        if(!accountLinked) {
-//            setUserInfo(this.event.session.user.accessToken);
-//        }        
-//        
-        
-        getStreamLiveStatus( (myResult) => {               
-            if(myResult) {
-                outputMsg = LIVE_MESSAGE;
-            }
-            else {
-                outputMsg = DOWN_MESSAGE;
-            }
-            outputMsg += "Your username is: " + userName + ".";
-            this.emit(':tell', outputMsg);            
-        });
-    },
-    'getFollowerCount': function() {
-        if(!this.event.session.user.accessToken) { //this might not work
+
+    'isStreamLive': function () {
+        if (!this.event.session.user.accessToken) { //this might not work
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
-//        if(!accountLinked) {   
-//            console.log("TOKEN IS: " + this.event.session.user.accessToken);
-//            setUserInfo(this.event.session.user.accessToken,(info) => {
-//                
-//                console.log("INFO: " + info);
-//            });
-//        }
-//        else {
-//            userName = this.attributes['userName'];
-//            accessToken = this.attributes['accessToken'];
-//        }
-        accessToken = this.event.session.user.accessToken;
-        
-        setUserInfo((info) => {                       
-            getStreamInfo("followers", (response) => {
+
+        getStreamInfo("live", (response) => {
             var responseData = JSON.parse(response);
-            var cardContent = "Follower count: ";
-                        
-            if(responseData == null) {
+
+            if (responseData == null) {
                 outputMsg = "There was a problem with getting the data please try again.";
+            } else {
+
+                if (responseData.stream !== null) {
+                    console.log("Stream is live");
+                    outputMsg = LIVE_MESSAGE;
+                } else {
+                    console.log("Stream is not live");
+                    outputMsg = DOWN_MESSAGE;
+                }
             }
-            else {
-                var followers = responseData.followers;
-                outputMsg = "You have " + followers + " followers.";
-                cardContent += followers;
-            }
-            outputMsg += " Your username is " + userName + ". Access token is " + accessToken;
-            
-            var cardTitle = "Followers";
-            
-            //this.attributes['userName'] = userName;
-            //this.attributes['accessToken'] = accessToken;
-            
-            this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
-            });            
-        });        
+
+            this.emit(':tell', outputMsg);
+        });
+
     },
-    'getViewerCount': function () {
-//        if(!accountLinked) {
-//            setUserInfo(this.event.session.user.accessToken);
-//        }
-        
-        getStreamInfo("viewers", (response) => {
-           var responseData = JSON.parse(response);
-           var cardContent = "Viewer count: ";
-           
-           if(responseData == null) {
-               outputMsg = "There was a problem getting the data please try again.";
-               cardContent = "Error";
-           }
-           else if(responseData.stream == null) {
-               outputMsg = "There are 0 viewers because the stream is not live.";
-               cardContent += "0";
-           }
-           else {
-               var viewerCount = responseData.stream.viewers;
-               outputMsg = "You currently have " + viewerCount + " viewers.";
-               cardContent += viewerCount;
-           }
-           
-           var cardTitle = "Viewers";
-           
-           this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+    'getFollowerCount': function () {
+        if (!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("followers", (response) => {
+                var responseData = JSON.parse(response);
+                var cardContent = "Follower count: ";
+
+                if (responseData == null) {
+                    outputMsg = "There was a problem with getting the data please try again.";
+                    cardContent = "Error";
+                } else {
+                    var followers = responseData.followers;
+                    outputMsg = "You have " + followers + " followers.";
+                    cardContent += followers;
+                }
+
+                var cardTitle = "Followers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
         });
     },
-    'getSubscriberCount': function () {
-//        if(!accountLinked) {
-//            setUserInfo(this.event.session.user.accessToken);
-//        }
-        
-        getStreamInfo("subscribers", (response) => {
-           var responseData = JSON.parse(response);
-           var cardContent = "Subscriber count: ";
-           
-           if(responseData == null) {
-               outputMsg = "There was a problem getting the data please try again.";
-               cardContent = "Error";
-           }           
-           else {
-               var subscriberCount = responseData._total - 1;
-               outputMsg = "You currently have " + subscriberCount + " subscribers.";
-               cardContent += subscriberCount;
-           }
-           
-           var cardTitle = "Subscribers";
-           
-           this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+    'getViewerCount': function () { //TODO UPDATE  
+        if (!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("viewers", (response) => {
+                var responseData = JSON.parse(response);
+                var cardContent = "Viewer count: ";
+
+                if (responseData == null) {
+                    outputMsg = "There was a problem with getting the data please try again.";
+                    cardContent = "Error";
+                } else if (responseData.stream == null) {
+                    outputMsg = "You have 0 viewers, the stream is not live.";
+                    cardContent += "0";
+                } else {
+                    var viewerCount = responseData.stream.viewers;
+                    outputMsg = "You currently have " + viewerCount + " viewers.";
+                    cardContent += viewerCount;
+                }
+
+                var cardTitle = "Viewers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
+        });
+
+    },
+    'getSubscriberCount': function () {  //TODO UPDATE    
+        if (!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("subscribers", (response) => {
+                var responseData = JSON.parse(response);
+                var cardContent = "Subscriber count: ";
+
+                if (responseData == null) {
+                    outputMsg = "There was a problem with getting the data please try again.";
+                    cardContent = "Error";
+                } else {
+                    var subscriberCount = responseData._total - 1;
+                    outputMsg = "You currently have " + subscriberCount + " subscribers.";
+                    cardContent += subscriberCount;
+                }
+
+                var cardTitle = "Subscribers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
         });
     },
     'AMAZON.HelpIntent': function () {
@@ -161,10 +161,10 @@ var handlers = {
     'AMAZON.StopIntent': function () {
         this.emit(':tell', STOP_MESSAGE);
     },
-    'Unhandled': function() {
+    'Unhandled': function () {
         this.emit(':ask', DIDNT_UNDERSTAND_MESSAGE, HELP_REPROMPT);
     },
-    'CatchAll': function() {
+    'CatchAll': function () {
         this.emit(':ask', DIDNT_UNDERSTAND_MESSAGE, HELP_REPROMPT);
     }
 };
@@ -175,46 +175,11 @@ var handlers = {
 
 var https = require('https');
 
-//Gets the status of whether your stream is live or not
-function getStreamLiveStatus(callback) {
-   
-    var options = {
-        host: 'api.twitch.tv',
-        port: 443,
-        path: '/kraken/streams/' + userName + '?client_id=3nevz99m02nwt62pto6ez57f3lms4o',
-        method: 'GET',
-    };
-
-    var req = https.request(options, res => {       
-        res.setEncoding('utf8');
-        var returnData = "";
-
-        res.on('data', chunk => {
-            returnData = returnData + chunk;
-        });
-
-        res.on('end', () => {
-            var status = false;
-            var result = JSON.parse(returnData);            
-            if(result.stream !== null) {
-                console.log("Stream is live");
-                status = true;
-            }
-            else {
-                console.log("Stream is not live");
-                status = false;
-            }
-            callback(status);  // this will execute whatever function the caller defined, with one argument
-        });
-    });
-    req.end();
-};
-
 //Gets the info of your stream depending on the arg you give it
 //Can get counts for followers, viewers, subscribers, also gets  you username
 function getStreamInfo(info, callback) {
     var path = "";
-    switch(info) {
+    switch (info) {
         case "followers":
             path = '/kraken/channels/' + userName + '?oauth_token=' + accessToken;
             break;
@@ -226,6 +191,9 @@ function getStreamInfo(info, callback) {
             break;
         case "username":
             path = '/kraken?oauth_token=' + accessToken;
+            break;
+        case "live":
+            path = '/kraken/streams/' + userName + '?client_id=3nevz99m02nwt62pto6ez57f3lms4o';
             break;
         default:
             path = '/kraken/channels/' + userName + '?oauth_token=' + accessToken;
@@ -239,7 +207,7 @@ function getStreamInfo(info, callback) {
         method: 'GET',
     };
 
-    var req = https.request(options, res => {       
+    var req = https.request(options, res => {
         res.setEncoding('utf8');
         var returnData = "";
 
@@ -247,27 +215,24 @@ function getStreamInfo(info, callback) {
             returnData += chunk;
         });
 
-        res.on('end', () => { 
+        res.on('end', () => {
             callback(returnData);
         });
-
     });
     req.end();
 };
 
 //Updates variables with your accessToken and username
-function setUserInfo(callback) {                            
-        //get the username        
-        getStreamInfo("username", (response) => {            
-            var responseData = JSON.parse(response);
-                                    
-            if(responseData) {
-                userName = responseData.token.user_name;
-            } 
-            else {
-                console.log("THERE WAS ERROR");
-            }
-            callback(userName);
-        });        
-}
+function setUserInfo(callback) {
+    //get the username        
+    getStreamInfo("username", (response) => {
+        var responseData = JSON.parse(response);
 
+        if (responseData) {
+            userName = responseData.token.user_name;
+        } else {
+            console.log("There was an error getting user name.");
+        }
+        callback(userName);
+    });
+};
