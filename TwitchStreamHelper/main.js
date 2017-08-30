@@ -1,9 +1,3 @@
-//TODO: Figure out way to actually wait for request to finish before moving on to get proper information
-//TODO: Figure out why returning information from other person logged in instead of my own
-//      - Probably use session variables and store in dynamoDB, only need to store accessToken and userName
-//      https://github.com/alexa/alexa-cookbook/blob/master/labs/HelloWorld/README.md
-//
-//OR: Try just resetting values or getting rid of is accountLInked and call it everytime
 'use strict';
 var Alexa = require('alexa-sdk');
 
@@ -17,7 +11,6 @@ var STOP_MESSAGE = "Goodbye!";
 var LIVE_MESSAGE = "Yes, the stream is <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
 var DOWN_MESSAGE = "The stream is not live.";
 
-var accountLinked = false;
 var outputMsg = "";
 var accessToken = "";
 var userName = "";
@@ -90,8 +83,8 @@ var handlers = {
             });
         });
     },
-    'getViewerCount': function () { //TODO UPDATE  
-        if (!this.event.session.user.accessToken) { //this might not work
+    'getViewerCount': function () { 
+        if (!this.event.session.user.accessToken) { 
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -122,8 +115,8 @@ var handlers = {
         });
 
     },
-    'getSubscriberCount': function () {  //TODO UPDATE    
-        if (!this.event.session.user.accessToken) { //this might not work
+    'getSubscriberCount': function () {    
+        if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -132,18 +125,27 @@ var handlers = {
 
         setUserInfo((info) => {
             getStreamInfo("subscribers", (response) => {
-                var responseData = JSON.parse(response);
-                var cardContent = "Subscriber count: ";
-
-                if (responseData == null) {
-                    outputMsg = "There was a problem with getting the data please try again.";
-                    cardContent = "Error";
-                } else {
-                    var subscriberCount = responseData._total - 1;
-                    outputMsg = "You currently have " + subscriberCount + " subscribers.";
-                    cardContent += subscriberCount;
+                if(response.indexOf("_total") == -1) {
+                    console.log("Not a subscriber "); 
+                    outputMsg = "You are not a Twitch partner or affiliate.";
+                    cardContent = "You are not a Twitch partner or affiliate.";    
                 }
-
+                else {
+                    var responseData = JSON.parse(response);
+                    var cardContent = "Subscriber count: ";
+                    console.log(responseData);
+                    if (responseData == null) {
+                        outputMsg = "There was a problem with getting the data please try again.";
+                        cardContent = "Error";
+                    } else if(responseData.status == "422") {
+                        outputMsg = "You are not a Twitch partner or affiliate.";
+                        cardContent = "You are not a Twitch partner or affiliate.";
+                    } else {
+                        var subscriberCount = responseData._total - 1;
+                        outputMsg = "You currently have " + subscriberCount + " subscribers.";
+                        cardContent += subscriberCount;
+                    }
+                }
                 var cardTitle = "Subscribers";
 
                 this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
