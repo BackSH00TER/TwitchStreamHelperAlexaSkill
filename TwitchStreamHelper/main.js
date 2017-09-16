@@ -83,8 +83,8 @@ var handlers = {
             });
         });
     },
-    'getViewerCount': function () { 
-        if (!this.event.session.user.accessToken) { 
+    'getViewerCount': function () {
+        if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -115,7 +115,7 @@ var handlers = {
         });
 
     },
-    'getSubscriberCount': function () {    
+    'getSubscriberCount': function () {
         if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
@@ -126,9 +126,9 @@ var handlers = {
         setUserInfo((info) => {
             getStreamInfo("subscribers", (response) => {
                 if(response.indexOf("_total") == -1) {
-                    console.log("Not a subscriber "); 
+                    console.log("Not a subscriber ");
                     outputMsg = "You are not a Twitch partner or affiliate.";
-                    cardContent = "You are not a Twitch partner or affiliate.";    
+                    cardContent = "You are not a Twitch partner or affiliate.";
                 }
                 else {
                     var responseData = JSON.parse(response);
@@ -144,6 +144,44 @@ var handlers = {
                         var subscriberCount = responseData._total - 1;
                         outputMsg = "You currently have " + subscriberCount + " subscribers.";
                         cardContent += subscriberCount;
+                    }
+                }
+                var cardTitle = "Subscribers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
+        });
+    },
+    'getLastSubscriber': function () {
+        if (!this.event.session.user.accessToken) {
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("subscribers", (response) => {
+                if(response.indexOf("_total") == -1) {
+                    console.log("Not a subscriber ");
+                    outputMsg = "You are not a Twitch partner or affiliate.";
+                    cardContent = "You are not a Twitch partner or affiliate.";
+                }
+                else {
+                    var responseData = JSON.parse(response);
+                    var cardContent = "Last subscriber: ";
+                    console.log(responseData);
+                    if (responseData == null) {
+                        outputMsg = "There was a problem with getting the data please try again.";
+                        cardContent = "Error";
+                    } else if(responseData.status == "422") {
+                        outputMsg = "You are not a Twitch partner or affiliate.";
+                        cardContent = "You are not a Twitch partner or affiliate.";
+                    } else {
+                        var subscriberCount = responseData._total - 1;
+                        var lastSubscriber = responseData.subscriptions[subscriberCount].user.display_name;
+                        outputMsg = "Your last subscriber was " + lastSubscriber;
+                        cardContent += lastSubscriber;
                     }
                 }
                 var cardTitle = "Subscribers";
