@@ -64,7 +64,7 @@ var handlers = {
         accessToken = this.event.session.user.accessToken;
 
         setUserInfo((info) => {
-            getStreamInfo("followers", (response) => {
+            getStreamInfo("basicInfo", (response) => {
                 var responseData = JSON.parse(response);
                 var cardContent = "Follower count: ";
 
@@ -190,6 +190,34 @@ var handlers = {
             });
         });
     },
+    'getLastFollower': function() {
+        if (!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("followers", (response) => {
+                var responseData = JSON.parse(response);
+                var cardContent = "Last Follower: ";
+
+                if (responseData == null) {
+                    outputMsg = "There was a problem with getting the data please try again.";
+                    cardContent = "Error";
+                } else {
+                    var lastFollower = responseData.follows[0].user.display_name;
+                    outputMsg = "Your last follower was " + lastFollower;
+                    cardContent += lastFollower;
+                }
+
+                var cardTitle = "Followers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
+        });
+    },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
         var reprompt = HELP_REPROMPT;
@@ -220,8 +248,11 @@ var https = require('https');
 function getStreamInfo(info, callback) {
     var path = "";
     switch (info) {
-        case "followers":
+        case "basicInfo":
             path = '/kraken/channels/' + userName + '?oauth_token=' + accessToken;
+            break;
+        case "followers":
+            path = '/kraken/channels/' + userName + '/follows?oauth_token=' + accessToken;
             break;
         case "viewers":
             path = '/kraken/streams/' + userName + '?oauth_token=' + accessToken;
