@@ -178,10 +178,16 @@ var handlers = {
                         outputMsg = "You are not a Twitch partner or affiliate.";
                         cardContent = "You are not a Twitch partner or affiliate.";
                     } else {
-                        var subscriberCount = responseData._total - 1;
-                        var lastSubscriber = responseData.subscriptions[subscriberCount].user.display_name;
-                        outputMsg = "Your last subscriber was " + lastSubscriber;
-                        cardContent += lastSubscriber;
+                        var subscriberCount = responseData._total - 1; //Counts self as subscriber
+                        if(subscriberCount == 0) {
+                            outputMsg = "You don't have any subscribers.";
+                            cardContent += "No subscribers";
+                        }
+                        else {
+                            var lastSubscriber = responseData.subscriptions[subscriberCount].user.display_name;
+                            outputMsg = "Your last subscriber was " + lastSubscriber;
+                            cardContent += lastSubscriber;
+                        }
                     }
                 }
                 var cardTitle = "Subscribers";
