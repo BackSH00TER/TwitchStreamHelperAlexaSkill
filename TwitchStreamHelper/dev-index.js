@@ -2,9 +2,9 @@
 var Alexa = require('alexa-sdk');
 
 var APP_ID = "amzn1.ask.skill.1e642b50-3370-407a-be32-1f9e667c06f9";
-var SKILL_NAME = "Twitch Stream Helper";
-var WELCOME_MESSAGE = "Welcome to the Stream Helper Skill.";
-var HELP_MESSAGE = "You can say is the stream live, or, you can say exit... What can I help you with?";
+var SKILL_NAME = "Stream Helper";
+var WELCOME_MESSAGE = "Welcome to the Stream Helper Skill. You can ask me questions about your viewers, followers or subscribers. What would you like to know?";
+var HELP_MESSAGE = "You can say how many followers do I have, or, you can say exit... What can I help you with?";
 var HELP_REPROMPT = "What can I help you with?";
 var DIDNT_UNDERSTAND_MESSAGE = "I'm sorry, I didn't understand that. Try again.";
 var STOP_MESSAGE = "Goodbye!";
@@ -28,7 +28,9 @@ exports.handler = function (event, context, callback) {
 };
 
 var handlers = {
-
+    'LaunchRequest': function () {
+        this.emit(':ask', WELCOME_MESSAGE, HELP_MESSAGE);
+    },
     'isStreamLive': function () {
         if (!this.event.session.user.accessToken) { //this might not work
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
@@ -223,6 +225,9 @@ var handlers = {
                 this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
             });
         });
+    },
+    'getStreamUpTime': function() {
+
     },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
