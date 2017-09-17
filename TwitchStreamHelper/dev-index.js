@@ -227,7 +227,45 @@ var handlers = {
         });
     },
     'getStreamUpTime': function() {
+        if (!this.event.session.user.accessToken) { //this might not work
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
 
+        //Stream needs to be live to get up time
+        getStreamInfo("live", (response) => {
+            var responseData = JSON.parse(response);
+
+            if (responseData == null) {
+                outputMsg = "There was a problem with getting the data please try again.";
+            } else {
+                if (responseData.stream == null) {
+                    console.log("Stream is not live");
+                    outputMsg = "<prosody rate=\"fast\">Silly goose!</prosody> Your stream isn't <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
+                } else {
+                    var streamStart = responseData.stream.created_at;
+                    var startDate = new Date(streamStart);
+                    var currentDate = new Date();
+                    console.log("StartDate: " + startDate);
+                    console.log("CurrentDate: " + currentDate);
+
+                    var totalMins = Math.floor((currentDate - startDate) / (1000*60));
+                    var mins = totalMins % 60;
+                    var hrs = Math.floor(totalMins / 60);
+
+                    if(hrs >= 23 && mins >= 59) {
+                        console.log("Live for over 24 hours");
+                        outputMsg = "Your stream has been <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme> for more than 24 hours.";
+                    }
+                    else {
+                        outputMsg = "Your stream has been <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme> for " + hrs + " hours and " + mins + " minutes.";
+                        console.log("Your stream has been live for: " + hrs + " hours and " + mins + " minutes.");
+                    }
+                }
+            }
+
+            this.emit(':tell', outputMsg);
+        });
     },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
