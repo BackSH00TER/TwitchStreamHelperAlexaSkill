@@ -32,7 +32,7 @@ var handlers = {
         this.emit(':ask', WELCOME_MESSAGE, HELP_MESSAGE);
     },
     'isStreamLive': function () {
-        if (!this.event.session.user.accessToken) { //this might not work
+        if (!this.event.session.user.accessToken) {  
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -58,7 +58,7 @@ var handlers = {
 
     },
     'getFollowerCount': function () {
-        if (!this.event.session.user.accessToken) { //this might not work
+        if (!this.event.session.user.accessToken) {  
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -199,7 +199,7 @@ var handlers = {
         });
     },
     'getLastFollower': function() {
-        if (!this.event.session.user.accessToken) { //this might not work
+        if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -215,9 +215,15 @@ var handlers = {
                     outputMsg = "There was a problem with getting the data please try again.";
                     cardContent = "Error";
                 } else {
-                    var lastFollower = responseData.follows[0].user.display_name;
-                    outputMsg = "Your last follower was " + lastFollower;
-                    cardContent += lastFollower;
+                    if(responseData._total == 0) {
+                        outputMsg = "You don't have any followers.";
+                        cardContent = "No followers.";
+                    }
+                    else {
+                        var lastFollower = responseData.follows[0].user.display_name;
+                        outputMsg = "Your last follower was " + lastFollower;
+                        cardContent += lastFollower;
+                    }
                 }
 
                 var cardTitle = "Followers";
@@ -226,8 +232,58 @@ var handlers = {
             });
         });
     },
+    'getLastFiveFollowers': function() {
+        if (!this.event.session.user.accessToken) {  
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("followers", (response) => {
+                var responseData = JSON.parse(response);
+                var cardContent = "";
+
+                if (responseData == null) {
+                    outputMsg = "There was a problem with getting the data please try again.";
+                    cardContent = "Error";
+                } else {
+                    //Check that they have 5 followers
+                    var count = 5;
+                    if(responseData._total == 0) {
+                        outputMsg = "You don't have any followers.";
+                        count = 0;
+                        cardContent = "No followers.";
+                    }
+                    else {
+                        if (responseData._total < 5) {
+                            count = responseData._total;
+                            console.log("User has " + count + " followers.");
+                        }
+
+                        var lastFiveFollowers = "";
+                        for(var i = 0; i < count; i++) {
+                            if(count > 1 && i == count - 1) {
+                                lastFiveFollowers += "and " + responseData.follows[i].user.display_name;
+                            }
+                            else {
+                                lastFiveFollowers += responseData.follows[i].user.display_name + ", ";
+                            }
+                        }                        
+                        outputMsg = "Your last " + count + " followers were " + lastFiveFollowers;
+                        cardContent += lastFiveFollowers;
+                    }
+                }
+
+                var cardTitle = "Last " + count + " Followers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
+        });
+    },
     'getStreamUpTime': function() {
-        if (!this.event.session.user.accessToken) { //this might not work
+        if (!this.event.session.user.accessToken) {  
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
