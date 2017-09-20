@@ -127,6 +127,7 @@ var handlers = {
 
         setUserInfo((info) => {
             getStreamInfo("subscribers", (response) => {
+                var cardContent = "Subscriber count: ";
                 if(response.indexOf("_total") == -1) {
                     console.log("Not a subscriber ");
                     outputMsg = "You are not a Twitch partner or affiliate.";
@@ -134,7 +135,6 @@ var handlers = {
                 }
                 else {
                     var responseData = JSON.parse(response);
-                    var cardContent = "Subscriber count: ";
                     console.log(responseData);
                     if (responseData == null) {
                         outputMsg = "There was a problem with getting the data please try again.";
@@ -164,6 +164,7 @@ var handlers = {
 
         setUserInfo((info) => {
             getStreamInfo("subscribers", (response) => {
+                var cardContent = "Last subscriber: ";
                 if(response.indexOf("_total") == -1) {
                     console.log("Not a subscriber ");
                     outputMsg = "You are not a Twitch partner or affiliate.";
@@ -171,7 +172,6 @@ var handlers = {
                 }
                 else {
                     var responseData = JSON.parse(response);
-                    var cardContent = "Last subscriber: ";
                     console.log(responseData);
                     if (responseData == null) {
                         outputMsg = "There was a problem with getting the data please try again.";
@@ -193,6 +193,61 @@ var handlers = {
                     }
                 }
                 var cardTitle = "Subscribers";
+
+                this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
+            });
+        });
+    },
+    'getLastFiveSubscribers': function () {
+        if (!this.event.session.user.accessToken) {
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            getStreamInfo("subscribers", (response) => {
+                var cardContent = "";
+                if(response.indexOf("_total") == -1) {
+                    console.log("Not a subscriber ");
+                    outputMsg = "You are not a Twitch partner or affiliate.";
+                    cardContent = "You are not a Twitch partner or affiliate.";
+                }
+                else {
+                    var responseData = JSON.parse(response);
+                    console.log(responseData);
+                    if (responseData == null) {
+                        outputMsg = "There was a problem with getting the data please try again.";
+                        cardContent = "Error";
+                    } else if(responseData.status == "422") {
+                        outputMsg = "You are not a Twitch partner or affiliate.";
+                        cardContent = "You are not a Twitch partner or affiliate.";
+                    } else {
+                        var subscriberCount = responseData._total - 1; //Counts self as subscriber
+                        if(subscriberCount == 0) {
+                            outputMsg = "You don't have any subscribers.";
+                            cardContent = "No subscribers";
+                        }
+                        else {
+                            if(subscriberCount > 5) {
+                                subscriberCount = 5;
+                            }
+                            var lastFiveSubscribers = "";
+                            for(var i = 0; i < subscriberCount; i++) {
+                                if(subscriberCount > 1 && i == subscriberCount - 1) {
+                                    lastFiveSubscribers += "and " + responseData.subscriptions[i].user.display_name;
+                                }
+                                else {
+                                    lastFiveSubscribers += responseData.subscriptions[i].user.display_name + ", ";
+                                }
+                            }
+                            outputMsg = "Your last " + subscriberCount + " subscribers were " + lastFiveSubscribers;
+                            cardContent += lastFiveSubscribers;
+                        }
+                    }
+                }
+                var cardTitle = "Last " + subscriberCount + " Subscribers:";
 
                 this.emit(':tellWithCard', outputMsg, cardTitle, cardContent);
             });
@@ -366,7 +421,7 @@ function getStreamInfo(info, callback) {
             path = '/kraken/streams/' + userName + '?oauth_token=' + accessToken;
             break;
         case "subscribers":
-            path = '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken;
+            path = '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc";
             break;
         case "username":
             path = '/kraken?oauth_token=' + accessToken;
