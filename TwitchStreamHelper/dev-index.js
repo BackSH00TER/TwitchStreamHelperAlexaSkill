@@ -106,7 +106,12 @@ var handlers = {
                     cardContent += "0";
                 } else {
                     var viewerCount = responseData.stream.viewers;
-                    outputMsg = "You currently have " + viewerCount + " viewers.";
+                    if(viewerCount == 1) {
+                        outputMsg = "You currently have " + viewerCount + " viewer.";
+                    }
+                    else {
+                        outputMsg = "You currently have " + viewerCount + " viewers.";
+                    }
                     cardContent += viewerCount;
                 }
 
