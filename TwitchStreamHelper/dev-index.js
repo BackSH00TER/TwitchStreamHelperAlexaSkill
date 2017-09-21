@@ -11,6 +11,7 @@ var STOP_MESSAGE = "Goodbye!";
 var LIVE_MESSAGE = "Yes, the stream is <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
 var DOWN_MESSAGE = "The stream is not live.";
 
+var clientID = "3nevz99m02nwt62pto6ez57f3lms4o";
 var outputMsg = "";
 var accessToken = "";
 var userName = "";
@@ -188,7 +189,7 @@ var handlers = {
                         var subscriberCount = responseData._total - 1; //Counts self as subscriber
                         if(subscriberCount == 0) {
                             outputMsg = "I am unable to get your last subscriber because you don't have any subscribers.";
-                            cardContent += "No subscribers";
+                            cardContent += "N/A";
                         }
                         else {
                             var lastSubscriber = responseData.subscriptions[subscriberCount].user.display_name;
@@ -232,7 +233,7 @@ var handlers = {
                         var subscriberCount = responseData._total - 1; //Counts self as subscriber
                         if(subscriberCount == 0) {
                             outputMsg = "I am unable to get your last subscribers because you don't have any subscribers.";
-                            cardContent = "No subscribers";
+                            cardContent = "N/A";
                         }
                         else {
                             if(subscriberCount > 5) {
@@ -429,7 +430,7 @@ function getStreamInfo(info, callback) {
             path = '/kraken/channels/' + userName + '/subscriptions?oauth_token=' + accessToken + "&direction=desc";
             break;
         case "username":
-            path = '/kraken?oauth_token=' + accessToken;
+            path = '/kraken?oauth_token=' + accessToken + '&client_id=' + clientID;
             break;
         case "live":
             path = '/kraken/streams/' + userName + '?client_id=3nevz99m02nwt62pto6ez57f3lms4o';
