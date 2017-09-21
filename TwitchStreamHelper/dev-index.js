@@ -135,8 +135,8 @@ var handlers = {
                 var cardContent = "Subscriber count: ";
                 if(response.indexOf("_total") == -1) {
                     console.log("Not a subscriber ");
-                    outputMsg = "You are not a Twitch partner or affiliate.";
-                    cardContent = "You are not a Twitch partner or affiliate.";
+                    outputMsg = "You have zero subscribers because you are not a Twitch partner or affiliate.";
+                    cardContent = "0 because you are not a Twitch partner or affiliate.";
                 }
                 else {
                     var responseData = JSON.parse(response);
@@ -145,8 +145,8 @@ var handlers = {
                         outputMsg = "There was a problem with getting the data please try again.";
                         cardContent = "Error";
                     } else if(responseData.status == "422") {
-                        outputMsg = "You are not a Twitch partner or affiliate.";
-                        cardContent = "You are not a Twitch partner or affiliate.";
+                        outputMsg = "You have zero subscribers because you are not a Twitch partner or affiliate.";
+                        cardContent = "0 because you are not a Twitch partner or affiliate.";
                     } else {
                         var subscriberCount = responseData._total - 1;
                         outputMsg = "You currently have " + subscriberCount + " subscribers.";
@@ -172,8 +172,8 @@ var handlers = {
                 var cardContent = "Last subscriber: ";
                 if(response.indexOf("_total") == -1) {
                     console.log("Not a subscriber ");
-                    outputMsg = "You are not a Twitch partner or affiliate.";
-                    cardContent = "You are not a Twitch partner or affiliate.";
+                    outputMsg = "I am unable to retrieve your last subscriber. You must be a Twitch partner or affiliate to get info about your subscribers.";
+                    cardContent = "Unable to retrieve. You are not a Twitch partner or affiliate.";
                 }
                 else {
                     var responseData = JSON.parse(response);
@@ -182,12 +182,12 @@ var handlers = {
                         outputMsg = "There was a problem with getting the data please try again.";
                         cardContent = "Error";
                     } else if(responseData.status == "422") {
-                        outputMsg = "You are not a Twitch partner or affiliate.";
-                        cardContent = "You are not a Twitch partner or affiliate.";
+                        outputMsg = "I am unable to retrieve your last subscriber. You must be a Twitch partner or affiliate to get info about your subscribers.";
+                        cardContent = "Unable to retrieve. You are not a Twitch partner or affiliate.";
                     } else {
                         var subscriberCount = responseData._total - 1; //Counts self as subscriber
                         if(subscriberCount == 0) {
-                            outputMsg = "You don't have any subscribers.";
+                            outputMsg = "I am unable to get your last subscriber because you don't have any subscribers.";
                             cardContent += "No subscribers";
                         }
                         else {
@@ -216,8 +216,8 @@ var handlers = {
                 var cardContent = "";
                 if(response.indexOf("_total") == -1) {
                     console.log("Not a subscriber ");
-                    outputMsg = "You are not a Twitch partner or affiliate.";
-                    cardContent = "You are not a Twitch partner or affiliate.";
+                    outputMsg = "I am unable to retrieve your last five subscribers. You must be a Twitch partner or affiliate to get info about your subscribers.";
+                    cardContent = "Unable to retrieve. You are not a Twitch partner or affiliate.";
                 }
                 else {
                     var responseData = JSON.parse(response);
@@ -226,12 +226,12 @@ var handlers = {
                         outputMsg = "There was a problem with getting the data please try again.";
                         cardContent = "Error";
                     } else if(responseData.status == "422") {
-                        outputMsg = "You are not a Twitch partner or affiliate.";
-                        cardContent = "You are not a Twitch partner or affiliate.";
+                        outputMsg = "I am unable to retrieve your last subscribers. You must be a Twitch partner or affiliate to get info about your subscribers.";
+                        cardContent = "Unable to retrieve. You are not a Twitch partner or affiliate.";
                     } else {
                         var subscriberCount = responseData._total - 1; //Counts self as subscriber
                         if(subscriberCount == 0) {
-                            outputMsg = "You don't have any subscribers.";
+                            outputMsg = "I am unable to get your last subscribers because you don't have any subscribers.";
                             cardContent = "No subscribers";
                         }
                         else {
