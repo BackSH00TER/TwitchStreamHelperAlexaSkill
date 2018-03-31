@@ -2,9 +2,9 @@
 var Alexa = require('alexa-sdk');
 
 var APP_ID = "amzn1.ask.skill.1e642b50-3370-407a-be32-1f9e667c06f9";
-var SKILL_NAME = "Twitch Stream Helper";
-var WELCOME_MESSAGE = "Welcome to the Stream Helper Skill.";
-var HELP_MESSAGE = "You can say is the stream live, or, you can say exit... What can I help you with?";
+var SKILL_NAME = "Stream Helper";
+var WELCOME_MESSAGE = "Welcome to the Stream Helper Skill. You can ask me questions about your viewers, followers or subscribers. What would you like to know?";
+var HELP_MESSAGE = "You can say how many followers do I have, or, you can say exit... What can I help you with?";
 var HELP_REPROMPT = "What can I help you with?";
 var DIDNT_UNDERSTAND_MESSAGE = "I'm sorry, I didn't understand that. Try again.";
 var STOP_MESSAGE = "Goodbye!";
@@ -18,7 +18,7 @@ var userName = "";
 
 
 //=========================================================================================================================================
-// Handlers  
+// Handlers
 //=========================================================================================================================================
 exports.handler = function (event, context, callback) {
     var alexa = Alexa.handler(event, context);
@@ -28,7 +28,11 @@ exports.handler = function (event, context, callback) {
 };
 
 var handlers = {
-
+    'LaunchRequest': function () {
+        this.emit(':ask', WELCOME_MESSAGE, HELP_MESSAGE);
+        //this.response.speak(WELCOME_MESSAGE).listen(HELP_MESSAGE);
+        //this.emit(':responseReady');
+    },
     'isStreamLive': function () {
         if (!this.event.session.user.accessToken) { //this might not work
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
@@ -83,8 +87,8 @@ var handlers = {
             });
         });
     },
-    'getViewerCount': function () { 
-        if (!this.event.session.user.accessToken) { 
+    'getViewerCount': function () {
+        if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
         }
@@ -115,7 +119,7 @@ var handlers = {
         });
 
     },
-    'getSubscriberCount': function () {    
+    'getSubscriberCount': function () {
         if (!this.event.session.user.accessToken) {
             this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
             return;
@@ -126,9 +130,9 @@ var handlers = {
         setUserInfo((info) => {
             getStreamInfo("subscribers", (response) => {
                 if(response.indexOf("_total") == -1) {
-                    console.log("Not a subscriber "); 
+                    console.log("Not a subscriber ");
                     outputMsg = "You are not a Twitch partner or affiliate.";
-                    cardContent = "You are not a Twitch partner or affiliate.";    
+                    cardContent = "You are not a Twitch partner or affiliate.";
                 }
                 else {
                     var responseData = JSON.parse(response);
@@ -172,7 +176,7 @@ var handlers = {
 };
 
 //=========================================================================================================================================
-// Helper functions 
+// Helper functions
 //=========================================================================================================================================
 
 var https = require('https');
@@ -226,7 +230,7 @@ function getStreamInfo(info, callback) {
 
 //Updates variables with your accessToken and username
 function setUserInfo(callback) {
-    //get the username        
+    //get the username
     getStreamInfo("username", (response) => {
         var responseData = JSON.parse(response);
 

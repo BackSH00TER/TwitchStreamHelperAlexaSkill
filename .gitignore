@@ -2,6 +2,8 @@
 Thumbs.db
 ehthumbs.db
 
+#ignore idea
+.idea
 # Folder config file
 Desktop.ini
 
