@@ -1,5 +1,6 @@
 'use strict';
 var Alexa = require('alexa-sdk');
+var tmi = require('tmi.js');
 
 var APP_ID = "amzn1.ask.skill.1e642b50-3370-407a-be32-1f9e667c06f9";
 var SKILL_NAME = "Stream Helper";
@@ -424,7 +425,18 @@ var handlers = {
                         outputMsg = "I created a clip with the id of " + responseData.data[0].id;
                         cardContent = "Clip URL: " + responseData.data[0].edit_url;
                     }
-                    this.emit(':tell', outputMsg, cardTitle, cardContent);
+
+                    // Only send the clip URL to stream if data was returned
+                    if(responseData.data) {
+                        var clipUrl = responseData.data[0].edit_url;
+                        var clipUrlTrimmed = clipUrl.substring(0, clipUrl.length-5);
+                        sendTwitchMessage(clipUrlTrimmed, (response) => {
+                            this.emit(':tell', outputMsg, cardTitle, cardContent);
+                        });
+                    }
+                    else {
+                        this.emit(':tell', outputMsg, cardTitle, cardContent);
+                    }
                 });
             });
         });
@@ -545,6 +557,36 @@ function getUserId(callback) {
         });
     });
     req.end();
+}
+
+// Uses TMI to send a message to the users channel with the clip that was created
+function sendTwitchMessage(clipUrl, callback) {
+    var options = {
+        options: {
+            debug: true
+        },
+        connection: {
+            cluster: "aws",
+            reconnect: true
+        },
+        identity: { // Identity of user to send message
+            username: "twitchtoolsbot",
+            password: "oauth:pm6oq6ic0akaqdnwe8e2igwmeokxti"
+        },
+        channel: userName
+    };
+
+    var client = new tmi.client(options);
+    client.connect().then(() => {
+        client.say(options.channel, clipUrl).then(() => {
+            client.disconnect()
+        });
+        callback("Message_Sent");
+    }).catch(function(err) {
+        console.log('Error detected trying to connect to chat:', err);
+        client.disconnect();
+        callback("Message_Failed_To_Send");
+    });
 }
 
 // Sets the userId variable

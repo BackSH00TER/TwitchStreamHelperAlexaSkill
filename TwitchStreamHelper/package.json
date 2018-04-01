@@ -1,8 +1,17 @@
 {
     "name": "TwitchStreamHelper",
     "version": "1.0.0",
-    "keywords": ["util", "functional", "server", "client", "browser"],
+    "keywords": [
+        "util",
+        "functional",
+        "server",
+        "client",
+        "browser"
+    ],
     "author": "ttyle",
     "contributors": [],
-    "dependencies": {}
+    "dependencies": {
+        "alexa-sdk": "^1.0.25",
+        "tmi.js": "^1.2.1"
+    }
 }
