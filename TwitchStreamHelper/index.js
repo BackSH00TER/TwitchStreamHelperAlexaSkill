@@ -9,12 +9,13 @@ var HELP_REPROMPT = "What can I help you with?";
 var DIDNT_UNDERSTAND_MESSAGE = "I'm sorry, I didn't understand that. Try again.";
 var STOP_MESSAGE = "Goodbye!";
 var LIVE_MESSAGE = "Yes, the stream is <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
-var DOWN_MESSAGE = "The stream is not live.";
+var DOWN_MESSAGE = "The stream is not <phoneme alphabet='ipa' ph='l aɪ v'>live</phoneme>.";
 
 var clientID = "3nevz99m02nwt62pto6ez57f3lms4o"; // The Twitch App clientID
 var outputMsg = "";
 var accessToken = "";
 var userName = "";
+var userId = "";
 
 
 //TODO: update index.js this is LIVE code now
@@ -388,6 +389,46 @@ var handlers = {
             });
         });
     },
+    'createClip': function() {
+        if (!this.event.session.user.accessToken) {  
+            this.emit(':tellWithLinkAccountCard', 'to start using this skill please use the companion app to authenticate with your Twitch account. And then try again.');
+            return;
+        }
+        var cardTitle = "Clip creation"
+        var cardContent = "";
+
+        accessToken = this.event.session.user.accessToken;
+
+        setUserInfo((info) => {
+            setUserId((info2) => {
+                createClip((response) => {
+                    var responseData = JSON.parse(response);
+                    console.log(responseData);
+                    
+                    if (responseData == null) {
+                        outputMsg = "There was a problem with getting the data please try again.";
+                        cardContent = "Error";
+                    } else if(responseData.status === 404) {
+                        var errMessage = JSON.parse(responseData.message);
+                        if(errMessage.code === "channel_not_live") {
+                            console.log("Channel not live, can't create clip");
+                            outputMsg = "Sorry I can't do that, clipping is not possible for an offline channel.";
+                            cardContent = "Channel must be online in order to clip";
+                        } else {
+                            console.log("Error code: " + errMessage.code);
+                            outputMsg = "Sorry there was an error while trying to create the clip.";
+                            cardContent = "Error creating clip";
+                        }
+                    } else {
+                        console.log("Clip created successfully");
+                        outputMsg = "I created a clip with the id of " + responseData.data[0].id;
+                        cardContent = "Clip URL: " + responseData.data[0].edit_url;
+                    }
+                    this.emit(':tell', outputMsg, cardTitle, cardContent);
+                });
+            });
+        });
+    },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
         var reprompt = HELP_REPROMPT;
@@ -477,3 +518,74 @@ function setUserInfo(callback) {
         callback(userName);
     });
 };
+
+// Requests using the new API, requires Auth Header
+function getUserId(callback) {
+    var path = '/helix/users?login=' + userName;
+    var options = {
+        host: 'api.twitch.tv',
+        port: 443,
+        path: path,
+        method: 'GET',
+        headers: {
+            Authorization: 'Bearer ' + accessToken
+        }
+    };
+
+    var req = https.request(options, res => {
+        res.setEncoding('utf8');
+        var returnData = "";
+
+        res.on('data', chunk => {
+            returnData += chunk;
+        });
+
+        res.on('end', () => {
+            callback(returnData);
+        });
+    });
+    req.end();
+}
+
+// Sets the userId variable
+function setUserId(callback) {
+    //get the username        
+    getUserId((response) => {
+        var responseData = JSON.parse(response);
+
+        if (responseData) {
+            userId = responseData.data[0].id;
+        } else {
+            console.log("There was an error getting user name.");
+        }
+        callback(userId);
+    });
+}
+
+// Calls endpoint to create a clip
+function createClip(callback) {
+    var path = '/helix/clips?broadcaster_id=' + userId;
+    var options = {
+        host: 'api.twitch.tv',
+        port: 443,
+        path: path,
+        method: 'POST',
+        headers: {
+            Authorization: 'Bearer ' + accessToken
+        }
+    };
+
+    var req = https.request(options, res => {
+        res.setEncoding('utf8');
+        var returnData = "";
+
+        res.on('data', chunk => {
+            returnData += chunk;
+        });
+
+        res.on('end', () => {
+            callback(returnData);
+        });
+    });
+    req.end();
+}
